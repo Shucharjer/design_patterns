@@ -496,26 +496,124 @@ namespace pattern {
         };
     }
 
-    namespace interpreter {
-
-    }
-
     namespace mediator {
 
+        template <typename>
+        class Mediator;
+
+        template <typename T>
+        class Colleague {
+        public:
+            virtual ~Colleague() = default;
+
+            template <typename Media, typename Clg, typename... Message>
+            requires std::is_base_of_v<Mediator<T>, Media>
+            void SendMessage(Media& mediator, Clg& colleague, Message&&... message) {
+                mediator.SendMessage(this, &colleague, std::forward<Message>(message)...);
+            }
+
+            virtual void OnReceiveMessage() {}
+        protected:
+            Colleague() = default;
+        };
+
+        template <typename T>
+        class Mediator {
+        public:
+            virtual ~Mediator() = default;
+
+            template <typename... Message>
+            void SendMessage(Colleague<T>* sender, Colleague<T>* recver, Message&&... message) {
+                if (auto iter = colleagues_.find(recver); iter != colleagues_.end()) {
+                    if (OnReceiveMessage()) {
+                        recver->OnReceiveMessage();
+                    }
+                }
+            }
+
+            virtual bool OnReceiveMessage() { return true; }
+
+        protected:
+            Mediator() = default;
+
+            std::unordered_set<Colleague<T>*> colleagues_;
+        };
     }
 
     namespace memento {
+        template <typename>
+        class Memento;
 
-    }
-
-    // wrapper    
-    namespace decorator {
-        template <typename T>
-        class Component : public T {
+        template <typename StateType>
+        class Originator {
         public:
-            virtual ~Component() = default;
+            virtual ~Originator() = default;
+            
+            template <typename T>
+            requires std::is_same_v<StateType, std::decay_t<T>>
+            void SetState(T&& state) {
+                state_ = std::forward<T>(state);
+            }
+
+            [[nodiscard]] Memento<StateType> Save() const {
+                return Memento<StateType>(state_);
+            }
+
+            void Restore(Memento<StateType> const& memento) {
+                state_ =  memento.GetState();
+            }
+        protected:
+            StateType state_;
         };
 
+        template <typename StateType>
+        class Memento {
+        public:
+            virtual ~Memento() = default;
+
+            template <typename T>
+            requires std::is_same_v<StateType, std::decay_t<T>>
+            explicit Memento(T&& state) : state_(state) {}
+
+            StateType GetState() const {
+                return state_;
+            }
+        protected:
+            StateType state_;         
+        };
+
+        template <typename StateType>
+        class Caretaker {
+        public:
+            virtual ~Caretaker() {}
+            Caretaker() : memento_(nullptr) {}
+
+            template <typename T>
+            requires std::is_same_v<Memento<StateType>, std::decay_t<T>>
+            void SetMemento(T&& memento) {
+                memento_ = std::make_unique<Memento<StateType>>(memento);
+            }
+
+            Memento<StateType> const& GetMemento() const {
+                return *static_cast<Memento<StateType>* const>(memento_.get());
+            }
+        protected:
+            std::unique_ptr<Memento<StateType>> memento_;
+        };
+    }
+
+    namespace interpreter {
+        class Expression {
+        public:
+            virtual ~Expression() = default;
+            virtual void interpret(std::vector<int>& context) const = 0;
+        protected:
+            Expression() = default;
+        };
+    }
+
+    // wrapper
+    namespace decorator {
         template <typename T>
         class Decorator : public T {
         public:

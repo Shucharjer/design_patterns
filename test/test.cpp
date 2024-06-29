@@ -3,7 +3,6 @@
 #include <memory>
 #include <string_view>
 #include <vector>
-#include <tuple>
 
 // 如果不能运行，多半是跟Catch2有关
 #define CATCH_CONFIG_MAIN
@@ -89,15 +88,6 @@ TEST_CASE("factory pattern") {
         auto factory{Factory{}};
         auto fruit = factory.Create();
         fruit->eat();
-    }
-}
-}
-
-
-namespace {
-TEST_CASE("abstruct factory") {
-    SECTION("normal usage") {
-
     }
 }
 }
@@ -688,7 +678,7 @@ namespace {
     using T = cla;
     using message_type = bool;
 
-    class Subject : public observer::Subject<cla, message_type> {
+    class Subject : public observer::Subject<Subject, message_type> {
     public:
         virtual ~Subject() = default;
 
@@ -705,7 +695,7 @@ namespace {
         int value;
     };
 
-    class ObserverR : public observer::Observer<cla, message_type> {
+    class ObserverR : public observer::Observer<Subject, message_type> {
     public:
         ObserverR() = default;
 
@@ -720,7 +710,7 @@ namespace {
         }
     };
 
-    class ObserverNr : public observer::Observer<cla, message_type> {
+    class ObserverNr : public observer::Observer<Subject, message_type> {
     public:
         ObserverNr() = default;
 
@@ -767,18 +757,65 @@ namespace {
         using decorated_type = Coffee;
         using shared_pointer = std::shared_ptr<decorated_type>;
 
-        CoffeeDecorator(shared_pointer pointer) : decorator::Decorator(pointer) {}
+        CoffeeDecorator(shared_pointer pointer) : decorator::Decorator<Coffee>(pointer) {}
     };
 
-    class MochaDecorator : public CoffeeDecorator {
+    class Mocha : public CoffeeDecorator {
     public:
+        Mocha(shared_pointer pointer) : CoffeeDecorator(pointer) {}
+    };
 
+    class Whip : public CoffeeDecorator {
+    public:
+        Whip(shared_pointer pointer) : CoffeeDecorator(pointer) {}
     };
 
 
     TEST_CASE("decorator") {
         SECTION("normal usage") {
+            auto simple_coffee = std::make_shared<SimpleCoffee>();
+            auto mocha_coffee = std::make_shared<Mocha>(simple_coffee);
+            auto whip_mocha_coffee = std::make_shared<Whip>(mocha_coffee);
+        }
+    }
+}
 
+namespace {
+    class ChatRoom : public mediator::Mediator<ChatRoom> {
+    public:
+        ChatRoom() = default;
+    };
+
+    static auto on_receive_message = [](){};
+
+    class User : public mediator::Colleague<ChatRoom> {
+    public:
+        User() = default;
+    };
+
+    TEST_CASE("mediator") {
+        SECTION("normal usage") {
+            auto user1 = User{};
+            auto user2 = User{};
+            auto user3 = User{};
+
+            auto room = ChatRoom{};
+
+            user1.SendMessage(room, user2, 114514);
+        }
+    }
+}
+
+namespace {
+    TEST_CASE("memento") {
+        SECTION("normal usage") {
+            auto originator = memento::Originator<int>{};
+            auto caretaker = memento::Caretaker<int>{};
+
+            originator.SetState(114);
+            caretaker.SetMemento(originator.Save());
+            originator.SetState(514);
+            originator.Restore(caretaker.GetMemento());
         }
     }
 }
