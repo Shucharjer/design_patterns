@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake&Ninja build",
+            "type": "shell",
+            "command": "cmake --build build",
+            "args": ["-B", "build", "-G", "Ninja"],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "VS build",
+            "type": "shell",
+            "command": ["-B", "build", "-G", "Visual Studio 17 2022"],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        }
+    ]
+}

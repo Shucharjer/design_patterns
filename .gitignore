@@ -1,0 +1,11 @@
+# clangd cache
+.cache
+
+# build files
+build
+
+# paths defined for cmake build
+# please create the file and define the varables "CMAKE_TOOLCHAIN_FILE",
+#       "VCPKG_DEFAULT_TRIPLET" and "VCPKG_INSTALL_PATH" to suit your package manager settings
+# also, you could just run the code without Cathc2 test environment
+CMakePaths.cmake
