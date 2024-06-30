@@ -16,215 +16,210 @@ using namespace pattern;
 // 希望你的编译器支持EBCO
 
 namespace {
-TEST_CASE("simple factory pattern") {
-    SECTION("normal usage") {
+    TEST_CASE("simple factory pattern") {
+        SECTION("normal usage") {
+            class Fruit : public simplefactory::Product<Fruit> {
+            public:
+                virtual void eat() const = 0;
+            };
 
-        class Fruit : public simplefactory::Product<Fruit> {
-        public:
-            virtual void eat() const = 0;
-        };
+            class Apple : public Fruit {
+            public:
+                virtual void eat() const override {
+                    std::cout << "eat apple" << std::endl;
+                }
+            };
 
-        class Apple : public Fruit {
-        public:
-            virtual void eat() const override {
-                std::cout << "eat apple" << std::endl;
-            }
-        };
+            class Banana : public Fruit {
+            public:
+                virtual void eat() const override {
+                    std::cout << "eat banana" << std::endl;
+                }
+            };
 
-        class Banana : public Fruit {
-        public:
-            virtual void eat() const override {
-                std::cout << "eat banana" << std::endl;
-            }
-        };
+            class SimpleFruitFactory
+                : public pattern::simplefactory::SimpleFactory<Fruit> {
+            public:
+                SimpleFruitFactory() = default;
+            };
 
-        class SimpleFruitFactory : public pattern::simplefactory::SimpleFactory<Fruit> {
-        public:
-            SimpleFruitFactory() = default;
-        };
-
-        auto simple_factory{SimpleFruitFactory{}};
-        auto apple{simple_factory.Create<Apple>()};
-        auto banana{simple_factory.Create<Banana>()};
-        apple->eat();
-        banana->eat();
+            auto simple_factory{SimpleFruitFactory{}};
+            auto apple{simple_factory.Create<Apple>()};
+            auto banana{simple_factory.Create<Banana>()};
+            apple->eat();
+            banana->eat();
+        }
     }
-}
-}
+}  // namespace
 
 namespace {
-TEST_CASE("factory pattern") {
-    SECTION("normal usage") {
-        class Fruit : public factory::Product<Fruit> {
-        public:
-            virtual void eat() const = 0;
-        };
+    TEST_CASE("factory pattern") {
+        SECTION("normal usage") {
+            class Fruit : public factory::Product<Fruit> {
+            public:
+                virtual void eat() const = 0;
+            };
 
-        class Apple : public Fruit {
-        public:
-            virtual void eat() const override {
-                std::cout << "eat apple" << std::endl;
-            }
-        };
+            class Apple : public Fruit {
+            public:
+                virtual void eat() const override {
+                    std::cout << "eat apple" << std::endl;
+                }
+            };
 
-        class Banana : public Fruit {
-        public:
-            virtual void eat() const override {
-                std::cout << "eat banana" << std::endl;
-            }
-        };
+            class Banana : public Fruit {
+            public:
+                virtual void eat() const override {
+                    std::cout << "eat banana" << std::endl;
+                }
+            };
 
-        class AppleFactory : public factory::Factory<Apple> {
-        public:
-            AppleFactory() = default;
-        };
-        class BananaFactory : public factory::Factory<Banana> {
-        public:
-            BananaFactory() = default;
-        };
+            class AppleFactory : public factory::Factory<Apple> {
+            public:
+                AppleFactory() = default;
+            };
+            class BananaFactory : public factory::Factory<Banana> {
+            public:
+                BananaFactory() = default;
+            };
 
-        using Factory = AppleFactory;
+            using Factory = AppleFactory;
 
-        auto factory{Factory{}};
-        auto fruit = factory.Create();
-        fruit->eat();
+            auto factory{Factory{}};
+            auto fruit = factory.Create();
+            fruit->eat();
+        }
     }
-}
-}
+}  // namespace
 
 namespace {
-TEST_CASE("builder pattern") {
-    SECTION("normal usage") {
-        struct Meal : public builder::Product<Meal> {
-        public:
-            std::string_view name;
-            std::string_view weight;
-        };
+    TEST_CASE("builder pattern") {
+        SECTION("normal usage") {
+            struct Meal : public builder::Product<Meal> {
+            public:
+                std::string_view name;
+                std::string_view weight;
+            };
 
-        class MealBuilder : public builder::Builder<Meal> {};
+            class MealBuilder : public builder::Builder<Meal> {};
 
-        class ChildrenMealBuilder : public MealBuilder {
-        public:
-            ChildrenMealBuilder() = default;
-            
-            // 到这里指针的类型好像是在继承中丢了一次，不得不关心一下具体的类型，而不是使用auto
-            virtual void Build(std::shared_ptr<Meal>& product) override {
-                SetMealName(product);
-                SetMealWeight(product);
-            }
-        private:
-            void SetMealName(std::shared_ptr<Meal>& product) {
-                product->name = std::string_view{"children meal"};
-            }
-            void SetMealWeight(std::shared_ptr<Meal>& product) {
-                product->weight = std::string_view("200g");
-            }
-        };
+            class ChildrenMealBuilder : public MealBuilder {
+            public:
+                ChildrenMealBuilder() = default;
 
-        using Builder = ChildrenMealBuilder;
-        using KFCWaiter = builder::Director;
-        using Director = KFCWaiter;
+                // 到这里指针的类型好像是在继承中丢了一次，不得不关心一下具体的类型，而不是使用auto
+                virtual void Build(std::shared_ptr<Meal> &product) override {
+                    SetMealName(product);
+                    SetMealWeight(product);
+                }
 
-        auto builder {Builder{}};
-        auto waiter {Director{}};
+            private:
+                void SetMealName(std::shared_ptr<Meal> &product) {
+                    product->name = std::string_view{"children meal"};
+                }
+                void SetMealWeight(std::shared_ptr<Meal> &product) {
+                    product->weight = std::string_view("200g");
+                }
+            };
 
-        // 理想的状态是
-        // auto product{ director.Construct<Builder>() };
-        // 但是这样很难让builder去动态变化
+            using Builder = ChildrenMealBuilder;
+            using KFCWaiter = builder::Director;
+            using Director = KFCWaiter;
 
-        // SetBuilder和Construct分开会导致类型擦除，然后C++就比较难构造了，得自己去弄一个映射和存储保存相关的信息
+            auto builder{Builder{}};
+            auto waiter{Director{}};
 
-        auto meal{waiter.Construct(builder)};
-        std::cout << meal->name << "\t" << meal->weight << std::endl;
+            // 理想的状态是
+            // auto product{ director.Construct<Builder>() };
+            // 但是这样很难让builder去动态变化
+
+            // SetBuilder和Construct分开会导致类型擦除，然后C++就比较难构造了，得自己去弄一个映射和存储保存相关的信息
+
+            auto meal{waiter.Construct(builder)};
+            std::cout << meal->name << "\t" << meal->weight << std::endl;
+        }
     }
-}
-}
+}  // namespace
 
 namespace {
-TEST_CASE("prototype") {
-    SECTION("copy constructor") {
-        class Apple {
-        public:
-            Apple() = default;
-            Apple(Apple const& other) = default;
-            Apple& operator=(Apple const& other) = default;
-            Apple(Apple&& other) = default;
-            Apple& operator=(Apple&& other) = default;
-        };
+    TEST_CASE("prototype") {
+        SECTION("copy constructor") {
+            class Apple {
+            public:
+                Apple() = default;
+                Apple(Apple const &other) = default;
+                Apple &operator=(Apple const &other) = default;
+                Apple(Apple &&other) = default;
+                Apple &operator=(Apple &&other) = default;
+            };
 
-        auto apple{Apple{}};
-        auto apple2(apple);
-        auto apple3(apple);
+            auto apple{Apple{}};
+            auto apple2(apple);
+            auto apple3(apple);
+        }
+
+        SECTION("normal usage") {
+            class Apple : public Prototype {
+            public:
+                Apple() = default;
+                // 如果将下面的拷贝构造取消注释，直接无法编译，感觉不如直接重写拷贝构造
+                // Apple(Apple const& other) = delete;
+
+                virtual std::shared_ptr<Prototype> Clone() const override {
+                    return std::make_shared<Apple>(*this);
+                }
+            };
+
+            auto apple{Apple{}};
+            auto apple2 = apple.Clone();
+            auto apple3 = apple.Clone();
+        }
     }
-
-    SECTION("normal usage") {
-        class Apple : public Prototype {
-        public:
-            Apple() = default;
-            // 如果将下面的拷贝构造取消注释，直接无法编译，感觉不如直接重写拷贝构造
-            // Apple(Apple const& other) = delete;
-
-            virtual std::shared_ptr<Prototype> Clone() const override {
-                return std::make_shared<Apple>(*this);
-            }
-        };
-
-        auto apple{Apple{}};
-        auto apple2 = apple.Clone();
-        auto apple3 = apple.Clone();
-    }
-}
-}
-
+}  // namespace
 
 namespace {
-TEST_CASE("singleton") {
-    SECTION("normal usage") {
-        class SingletonClass : public pattern::Singleton<SingletonClass> {
-        public:
-            SingletonClass() = default;
-            ~SingletonClass() = default;
-        };
-        
-        auto singleton{SingletonClass{}};
+    TEST_CASE("singleton") {
+        SECTION("normal usage") {
+            class SingletonClass : public pattern::Singleton<SingletonClass> {
+            public:
+                SingletonClass() = default;
+                ~SingletonClass() = default;
+            };
 
-        auto singleton2{SingletonClass{}};
+            auto singleton{SingletonClass{}};
 
-        REQUIRE(&singleton.GetInstance() == &singleton2.GetInstance());
+            auto singleton2{SingletonClass{}};
+
+            REQUIRE(&singleton.GetInstance() == &singleton2.GetInstance());
+        }
     }
-}
-}
-
+}  // namespace
 
 namespace {
-TEST_CASE("adapter") {
-    SECTION("normal usage") {
-        class Target {
-        public:
-            virtual void Juice() = 0;
-        };
+    TEST_CASE("adapter") {
+        SECTION("normal usage") {
+            class Target {
+            public:
+                virtual void Juice() = 0;
+            };
 
-        class Adaptee {
-        public:
-            void MakeJuice() {
-                std::cout << "make juice" << std::endl;
-            }
-        };
+            class Adaptee {
+            public:
+                void MakeJuice() { std::cout << "make juice" << std::endl; }
+            };
 
-        class Adapter : public pattern::Adapter<Target, Adaptee> {
-        public:
-            Adapter() = default;
+            class Adapter : public pattern::Adapter<Target, Adaptee> {
+            public:
+                Adapter() = default;
 
-            virtual void Juice() override {
-                this->adaptee_.MakeJuice();
-            }
-        };
+                virtual void Juice() override { this->adaptee_.MakeJuice(); }
+            };
 
-        auto adapter{Adapter{}};
-        adapter.Juice();
+            auto adapter{Adapter{}};
+            adapter.Juice();
+        }
     }
-}
-}
+}  // namespace
 
 namespace {
     struct Color {
@@ -232,15 +227,11 @@ namespace {
     };
 
     struct RedColor : Color {
-        RedColor() {
-            this->info = std::string_view("red");
-        }
+        RedColor() { this->info = std::string_view("red"); }
     };
 
     struct BlueColor : Color {
-        BlueColor() {
-            this->info = std::string_view("blue");
-        }
+        BlueColor() { this->info = std::string_view("blue"); }
     };
 
     class Pen {
@@ -258,10 +249,11 @@ namespace {
         }
 
         virtual void Draw(std::string_view object) = 0;
+
     protected:
         Pen() : color_(nullptr) {}
 
-        bridge::Bridge<Color>* color_;
+        bridge::Bridge<Color> *color_;
     };
 
     class SmallPen : public Pen {
@@ -269,7 +261,8 @@ namespace {
         SmallPen() = default;
 
         virtual void Draw(std::string_view object) override {
-            std::cout << "using small pen draw " << color_->Get().info << ' ' << object << std::endl;
+            std::cout << "using small pen draw " << color_->Get().info << ' '
+                      << object << std::endl;
         }
     };
 
@@ -278,7 +271,8 @@ namespace {
         MiddlePen() = default;
 
         virtual void Draw(std::string_view object) override {
-            std::cout << "using middle pen draw " << color_->Get().info << ' ' << object << std::endl;
+            std::cout << "using middle pen draw " << color_->Get().info << ' '
+                      << object << std::endl;
         }
     };
 
@@ -294,7 +288,7 @@ namespace {
             pen.Draw("flowers");
         }
     }
-}
+}  // namespace
 
 namespace {
     class AComponent : public composite::Component<AComponent> {
@@ -302,34 +296,35 @@ namespace {
         AComponent() = default;
     };
 
-    class ALeaf : public composite::Leaf<AComponent> {
+    class ALeaf : public composite::Leaf<AComponent> {};
 
-    };
-
-    class AComposite : public composite::Composite<AComponent> {
-
-    };
-}
+    class AComposite : public composite::Composite<AComponent> {};
+}  // namespace
 
 namespace {
     template <typename T>
     class ListNode {
     public:
         T value;
-        ListNode<T>* next = nullptr;
-        ~ListNode() { if (next) {delete next; next = nullptr;}}
+        ListNode<T> *next = nullptr;
+        ~ListNode() {
+            if (next) {
+                delete next;
+                next = nullptr;
+            }
+        }
     };
 
     template <typename T>
-    class ListNodeIterator : public iterator::Iterator<ListNodeIterator<T>, T, std::forward_iterator_tag> {
-        ListNode<T>* current = nullptr;
-    public:
-        T& dereference() const {
-            return current->value;
-        }
-    };
-}
+    class ListNodeIterator
+        : public iterator::Iterator<
+              ListNodeIterator<T>, T, std::forward_iterator_tag> {
+        ListNode<T> *current = nullptr;
 
+    public:
+        T &dereference() const { return current->value; }
+    };
+}  // namespace
 
 namespace {
     class ImageDisplayable {
@@ -340,15 +335,13 @@ namespace {
 
     class RealImage : public ImageDisplayable {
     public:
-        void display() override {
-
-        }
+        void display() override {}
     };
 
     class ProxyImage : public ImageDisplayable {
     public:
-        ProxyImage() : proxy_([=]() { return std::make_unique<RealImageProxyImpl>(); }) {
-
+        ProxyImage()
+            : proxy_([=]() { return std::make_unique<RealImageProxyImpl>(); }) {
         }
 
         void display() override {
@@ -357,6 +350,7 @@ namespace {
                 image->display();
             }
         }
+
     private:
         class RealImageProxyImpl : public RealImage {
         public:
@@ -373,12 +367,10 @@ namespace {
             image.display();
         }
     }
-}
-
+}  // namespace
 
 namespace {
-    struct ComputerPart {
-    };
+    struct ComputerPart {};
 
     class Cpu : public visitor::Element<ComputerPart> {
     public:
@@ -404,60 +396,44 @@ namespace {
 
     class PriceCalculator final : public ComputerPartVisitor {
     public:
-        void visit(Cpu cpu) override {
-            total_ += cpu.price;
-        }
+        void visit(Cpu cpu) override { total_ += cpu.price; }
 
-        void visit(Memory memory) override {
-            total_ += memory.price;
-        }
+        void visit(Memory memory) override { total_ += memory.price; }
 
-        int get_totol_price() const {
-            return total_;
-        }
+        int get_totol_price() const { return total_; }
+
     private:
         int total_ = 0;
     };
 
-
     TEST_CASE("visitor") {
-        SECTION("normal usage") {
-            auto computer{Computer{}};
-        }
+        SECTION("normal usage") { auto computer{Computer{}}; }
     }
-}
-
-
+}  // namespace
 
 namespace {
 
-        class Sorter {
-        public:
-            void sort() {
-                invoker_.Invoke();
-            }
+    class Sorter {
+    public:
+        void sort() { invoker_.Invoke(); }
 
-            template <typename F>
-            void set_function(F&& f) {
-                invoker_.SetStrategy(std::forward<F>(f));
-            }
-        private:
-            StrategyInvoker<void()> invoker_;
-        };
+        template <typename F>
+        void set_function(F &&f) {
+            invoker_.SetStrategy(std::forward<F>(f));
+        }
+
+    private:
+        StrategyInvoker<void()> invoker_;
+    };
 
     TEST_CASE("strategy") {
-
-        
-
-
         SECTION("normal usage") {
             auto sorter{Sorter{}};
-            sorter.set_function([](){});
+            sorter.set_function([]() {});
             sorter.sort();
         }
     }
-}
-
+}  // namespace
 
 namespace {
     class AbsCommand {};
@@ -503,10 +479,10 @@ namespace {
             invoker.Invoke(list2);
         }
     }
-}
+}  // namespace
 
 namespace {
-    class Thread{};
+    class Thread {};
 
     class New : public state::State<Thread> {};
     class Runnable : public state::State<Thread> {};
@@ -524,7 +500,7 @@ namespace {
             }
         }
 
-        float GetTime()  {
+        float GetTime() {
             if (context_.Castable<Runnable>()) {
                 // ...
             }
@@ -549,7 +525,7 @@ namespace {
                 //...
             }
         }
-        
+
     protected:
         state::Context<Thread> context_;
     };
@@ -561,7 +537,7 @@ namespace {
             tc.Stop();
         }
     }
-}
+}  // namespace
 
 namespace {
     class TeamMember {};
@@ -573,12 +549,9 @@ namespace {
         void Handle(int days) {
             if (days < 7) {
                 //...
-            }
-            else if (next_)
-            {
+            } else if (next_) {
                 //...
-            }
-            else {
+            } else {
                 //...
             }
         }
@@ -591,11 +564,9 @@ namespace {
         void Handle(int days) {
             if (days < 15) {
                 //...
-            }
-            else if (next_) {
+            } else if (next_) {
                 //...
-            }
-            else {
+            } else {
                 //...
             }
         }
@@ -608,11 +579,9 @@ namespace {
         void Handle(int days) {
             if (days < 30) {
                 //...
-            }
-            else if(next_) {
+            } else if (next_) {
                 //...
-            }
-            else {
+            } else {
                 //...
             }
         }
@@ -629,36 +598,41 @@ namespace {
 
             teamleader.Handle(5);
 
-
             std::tuple<int, int, int> t;
         }
     }
-}
+}  // namespace
 
 namespace {
-    class Piece{
+    class Piece {
     public:
         explicit Piece(std::string_view position) : position_(position) {}
         virtual ~Piece() = default;
+
     protected:
         std::string_view position_;
     };
 
     class BlackPiece : public flyweight::Flyweight<Piece, std::string_view> {
     public:
-        BlackPiece(std::string_view position) : flyweight::Flyweight<Piece, std::string_view>(position) {
-            std::cout << "black piece was put on position: " << position << std::endl;
+        BlackPiece(std::string_view position)
+            : flyweight::Flyweight<Piece, std::string_view>(position) {
+            std::cout << "black piece was put on position: " << position
+                      << std::endl;
         }
     };
 
     class WhitePiece : public flyweight::Flyweight<Piece, std::string_view> {
     public:
-        WhitePiece(std::string_view position) : flyweight::Flyweight<Piece, std::string_view>(position) {
-            std::cout << "white piece was put on position: " << position << std::endl;
+        WhitePiece(std::string_view position)
+            : flyweight::Flyweight<Piece, std::string_view>(position) {
+            std::cout << "white piece was put on position: " << position
+                      << std::endl;
         }
     };
 
-    class Factory : public flyweight::FlyweightFactory<Piece, std::string_view> {
+    class Factory
+        : public flyweight::FlyweightFactory<Piece, std::string_view> {
     public:
         Factory() = default;
     };
@@ -666,12 +640,13 @@ namespace {
     TEST_CASE("flywegiht") {
         SECTION("normal usage") {
             auto factory = Factory{};
-            auto black_piece1 = factory.Get<BlackPiece>(std::string_view("12, 2"));
-            auto white_piece1 = factory.Get<WhitePiece>(std::string_view("18, 18"));
+            auto black_piece1 =
+                factory.Get<BlackPiece>(std::string_view("12, 2"));
+            auto white_piece1 =
+                factory.Get<WhitePiece>(std::string_view("18, 18"));
         }
     }
-}
-
+}  // namespace
 
 namespace {
     class cla {};
@@ -690,6 +665,7 @@ namespace {
 
             Notify(value > last_value);
         }
+
     protected:
         int last_value;
         int value;
@@ -702,8 +678,7 @@ namespace {
         void Update(message_type message) {
             if (message) {
                 std::cout << "yes!" << std::endl;
-            }
-            else {
+            } else {
                 // 天台见
                 std::cout << "no!!!!!!!" << std::endl;
             }
@@ -717,8 +692,7 @@ namespace {
         void Update(message_type message) {
             if (!message) {
                 std::cout << "yes!" << std::endl;
-            }
-            else {
+            } else {
                 std::cout << "no!!!!!!!" << std::endl;
             }
         }
@@ -739,7 +713,7 @@ namespace {
             subject2.SetState(1);
         }
     }
-}
+}  // namespace
 
 namespace {
     class Coffee {
@@ -749,7 +723,6 @@ namespace {
 
     class SimpleCoffee : public Coffee {
     public:
-
     };
 
     class CoffeeDecorator : public decorator::Decorator<Coffee> {
@@ -757,7 +730,8 @@ namespace {
         using decorated_type = Coffee;
         using shared_pointer = std::shared_ptr<decorated_type>;
 
-        CoffeeDecorator(shared_pointer pointer) : decorator::Decorator<Coffee>(pointer) {}
+        CoffeeDecorator(shared_pointer pointer)
+            : decorator::Decorator<Coffee>(pointer) {}
     };
 
     class Mocha : public CoffeeDecorator {
@@ -770,7 +744,6 @@ namespace {
         Whip(shared_pointer pointer) : CoffeeDecorator(pointer) {}
     };
 
-
     TEST_CASE("decorator") {
         SECTION("normal usage") {
             auto simple_coffee = std::make_shared<SimpleCoffee>();
@@ -778,7 +751,7 @@ namespace {
             auto whip_mocha_coffee = std::make_shared<Whip>(mocha_coffee);
         }
     }
-}
+}  // namespace
 
 namespace {
     class ChatRoom : public mediator::Mediator<ChatRoom> {
@@ -786,7 +759,7 @@ namespace {
         ChatRoom() = default;
     };
 
-    static auto on_receive_message = [](){};
+    static auto on_receive_message = []() {};
 
     class User : public mediator::Colleague<ChatRoom> {
     public:
@@ -804,7 +777,7 @@ namespace {
             user1.SendMessage(room, user2, 114514);
         }
     }
-}
+}  // namespace
 
 namespace {
     TEST_CASE("memento") {
@@ -818,4 +791,4 @@ namespace {
             originator.Restore(caretaker.GetMemento());
         }
     }
-}
+}  // namespace
