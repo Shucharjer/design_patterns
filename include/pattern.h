@@ -14,19 +14,7 @@ namespace pattern {
     // 注释中涉及到的内容可能在之后多次涉及到，之后并不再提出
     // 通过将构造函数声明为protected，保证不直接使用这里提供的类（而是使用它的子类，并将子类的构造函数声明为public）
     // 到处都是模板和CRTP，就不实现模板模式了
-    // 迭代器模式的模板实现中也用到了门面（外观）模式，照着C++
-    // Templates实现的，下面会提到 代码参考谷歌的C++编程规范，也有乱写的时候
-
-    // 想了一下还是尽量不继承，避免哪天为了省这点代码量遇到菱形继承损失性能
-
-    // class Class : public ProtectedClass {};
-    class ProtectedClass {
-    public:
-        virtual ~ProtectedClass() = default;
-
-    protected:
-        ProtectedClass() = default;
-    };
+    // 迭代器模式的模板实现中也用到了门面（外观）模式，照着C++ Templates实现的，下面会提到
 
     // singleton
     template <typename Derived>
@@ -63,7 +51,7 @@ namespace pattern {
         };
 
         template <typename ProductType>
-            requires std::is_base_of_v<Product<ProductType>, ProductType>
+        requires std::is_base_of_v<Product<ProductType>, ProductType>
         class SimpleFactory {
         public:
             using product_type = ProductType;
@@ -72,13 +60,9 @@ namespace pattern {
             virtual ~SimpleFactory() = default;
 
             template <typename SpecificProductType, typename... Args>
-                requires std::is_base_of_v<ProductType, SpecificProductType>
-            [[nodiscard]] std::shared_ptr<SpecificProductType> Create(
-                Args &&...args
-            ) {
-                return std::make_shared<SpecificProductType>(
-                    std::forward<Args>(args)...
-                );
+            requires std::is_base_of_v<ProductType, SpecificProductType>
+            [[nodiscard]] std::shared_ptr<SpecificProductType> Create(Args &&...args) {
+                return std::make_shared<SpecificProductType>(std::forward<Args>(args)...);
             }
 
         protected:
@@ -108,12 +92,8 @@ namespace pattern {
             virtual ~Factory() = default;
 
             template <typename... Args>
-            [[nodiscard]] std::shared_ptr<SpecificProductType> Create(
-                Args &&...args
-            ) {
-                return std::make_shared<SpecificProductType>(
-                    std::forward<Args>(args)...
-                );
+            [[nodiscard]] std::shared_ptr<SpecificProductType> Create(Args &&...args) {
+                return std::make_shared<SpecificProductType>(std::forward<Args>(args)...);
             }
 
         protected:
@@ -136,7 +116,7 @@ namespace pattern {
         };
 
         template <typename ProductType>
-            requires std::is_base_of_v<Product<ProductType>, ProductType>
+        requires std::is_base_of_v<Product<ProductType>, ProductType>
         class Builder {
         public:
             using product_type = ProductType;
@@ -156,10 +136,8 @@ namespace pattern {
             virtual ~Director() = default;
 
             template <typename Builder>
-            [[nodiscard]] auto Construct(Builder &builder
-            ) -> std::shared_ptr<typename Builder::product_type> {
-                auto product{std::make_shared<typename Builder::product_type>()
-                };
+            [[nodiscard]] auto Construct(Builder &builder) -> std::shared_ptr<typename Builder::product_type> {
+                auto product{std::make_shared<typename Builder::product_type>()};
                 builder.Build(product);
                 return product;
             }
@@ -225,8 +203,7 @@ namespace pattern {
             virtual void Add(std::shared_ptr<Component<T>> component) override {
                 throw std::runtime_error("Cannot add to a leaf");
             }
-            virtual void Remove(std::shared_ptr<Component<T>> component
-            ) override {
+            virtual void Remove(std::shared_ptr<Component<T>> component) override {
                 throw std::runtime_error("Cannot add to a leaf");
             };
         };
@@ -234,16 +211,10 @@ namespace pattern {
         template <typename T>
         class Composite : public Component<T> {
         public:
-            virtual void Add(std::shared_ptr<Component<T>> component) override {
-                children_.push_back(component);
-            }
+            virtual void Add(std::shared_ptr<Component<T>> component) override { children_.push_back(component); }
 
-            virtual void Remove(std::shared_ptr<Component<T>> component
-            ) override {
-                if (auto it = std::find(
-                        children_.begin(), children_.end(), component
-                    );
-                    it != children_.end()) {
+            virtual void Remove(std::shared_ptr<Component<T>> component) override {
+                if (auto it = std::find(children_.begin(), children_.end(), component); it != children_.end()) {
                     children_.erase(it);
                 }
             }
@@ -266,8 +237,7 @@ namespace pattern {
                 return proxied_object_.get();
             }
             Proxy(std::function<std::unique_ptr<T>()> object_create_method)
-                : object_create_method_(object_create_method),
-                  proxied_object_(nullptr) {}
+                : object_create_method_(object_create_method), proxied_object_(nullptr) {}
 
         private:
             std::function<std::unique_ptr<T>()> object_create_method_;
@@ -278,9 +248,7 @@ namespace pattern {
     namespace iterator {
 
         // facade pattern realized iterator, referenced "C++ Templates 2nd"
-        template <
-            typename Derived, typename Value, typename Category,
-            typename Distance = std::ptrdiff_t>
+        template <typename Derived, typename Value, typename Category, typename Distance = std::ptrdiff_t>
         class Iterator {
         public:
             using value_type = typename std::remove_const_t<Value>;
@@ -292,9 +260,7 @@ namespace pattern {
 
             virtual ~Iterator() = default;
 
-            virtual bool is_same(self_type const &other) const {
-                return ptr_ == other.ptr_;
-            }
+            virtual bool is_same(self_type const &other) const { return ptr_ == other.ptr_; }
 
             // input
             virtual reference operator*() const = 0;
@@ -342,9 +308,7 @@ namespace pattern {
     template <typename Ret, typename... Args>
     class StrategyInvoker<Ret(Args...)> {
     public:
-        void SetStrategy(std::function<Ret(Args...)> strategy) {
-            strategy_ = strategy;
-        }
+        void SetStrategy(std::function<Ret(Args...)> strategy) { strategy_ = strategy; }
 
         Ret Invoke(Args &&...args) { strategy_(std::forward<Args>(args)...); }
 
@@ -379,7 +343,7 @@ namespace pattern {
             virtual ~CommandList() = default;
 
             template <typename Type>
-                requires std::is_base_of_v<Command<T>, std::decay_t<Type>>
+            requires std::is_base_of_v<Command<T>, std::decay_t<Type>>
             void Add(Type &&command) {
                 commands_.push_back(command);
             }
@@ -399,7 +363,7 @@ namespace pattern {
             virtual ~Invoker() = default;
 
             template <typename List>
-                requires std::is_base_of_v<CommandList<T>, std::decay_t<List>>
+            requires std::is_base_of_v<CommandList<T>, std::decay_t<List>>
             void Invoke(List &&list) {
                 for (auto command : list.commands_) {
                     command.Execute();
@@ -434,7 +398,7 @@ namespace pattern {
             virtual ~Context() = default;
 
             template <typename StateType>
-                requires std::is_base_of_v<State<T>, StateType>
+            requires std::is_base_of_v<State<T>, StateType>
             void Set(StateType state) {
                 state_.reset(std::make_unique<StateType>());
             }
@@ -474,8 +438,7 @@ namespace pattern {
                 }
             }
             virtual void Remove(Observer<T, MessageType> &observer) {
-                if (auto iter = observer_ptrs.find(&observer);
-                    iter != observer_ptrs.end()) {
+                if (auto iter = observer_ptrs.find(&observer); iter != observer_ptrs.end()) {
                     observer_ptrs.erase(iter);
                 }
             }
@@ -514,13 +477,11 @@ namespace pattern {
             virtual ~FlyweightFactory() = default;
 
             template <typename ConcreteState, typename InternalState_>
-                requires std::is_base_of_v<
-                    Flyweight<T, InternalState>, ConcreteState>
+            requires std::is_base_of_v<Flyweight<T, InternalState>, ConcreteState>
             auto &Get(InternalState_ &&internal_state) {
                 if (pool_.find(internal_state) == pool_.end()) {
-                    pool_[internal_state] = std::make_shared<ConcreteState>(
-                        std::forward<InternalState>(internal_state)
-                    );
+                    pool_[internal_state] =
+                        std::make_shared<ConcreteState>(std::forward<InternalState>(internal_state));
                 }
 
                 return pool_[internal_state];
@@ -544,13 +505,9 @@ namespace pattern {
             virtual ~Colleague() = default;
 
             template <typename Media, typename Clg, typename... Message>
-                requires std::is_base_of_v<Mediator<T>, Media>
-            void SendMessage(
-                Media &mediator, Clg &colleague, Message &&...message
-            ) {
-                mediator.SendMessage(
-                    this, &colleague, std::forward<Message>(message)...
-                );
+            requires std::is_base_of_v<Mediator<T>, Media>
+            void SendMessage(Media &mediator, Clg &colleague, Message &&...message) {
+                mediator.SendMessage(this, &colleague, std::forward<Message>(message)...);
             }
 
             virtual void OnReceiveMessage() {}
@@ -565,11 +522,8 @@ namespace pattern {
             virtual ~Mediator() = default;
 
             template <typename... Message>
-            void SendMessage(
-                Colleague<T> *sender, Colleague<T> *recver, Message &&...message
-            ) {
-                if (auto iter = colleagues_.find(recver);
-                    iter != colleagues_.end()) {
+            void SendMessage(Colleague<T> *sender, Colleague<T> *recver, Message &&...message) {
+                if (auto iter = colleagues_.find(recver); iter != colleagues_.end()) {
                     if (OnReceiveMessage()) {
                         recver->OnReceiveMessage();
                     }
@@ -595,18 +549,14 @@ namespace pattern {
             virtual ~Originator() = default;
 
             template <typename T>
-                requires std::is_same_v<StateType, std::decay_t<T>>
+            requires std::is_same_v<StateType, std::decay_t<T>>
             void SetState(T &&state) {
                 state_ = std::forward<T>(state);
             }
 
-            [[nodiscard]] Memento<StateType> Save() const {
-                return Memento<StateType>(state_);
-            }
+            [[nodiscard]] Memento<StateType> Save() const { return Memento<StateType>(state_); }
 
-            void Restore(Memento<StateType> const &memento) {
-                state_ = memento.GetState();
-            }
+            void Restore(Memento<StateType> const &memento) { state_ = memento.GetState(); }
 
         protected:
             StateType state_;
@@ -618,7 +568,7 @@ namespace pattern {
             virtual ~Memento() = default;
 
             template <typename T>
-                requires std::is_same_v<StateType, std::decay_t<T>>
+            requires std::is_same_v<StateType, std::decay_t<T>>
             explicit Memento(T &&state) : state_(state) {}
 
             StateType GetState() const { return state_; }
@@ -634,7 +584,7 @@ namespace pattern {
             Caretaker() : memento_(nullptr) {}
 
             template <typename T>
-                requires std::is_same_v<Memento<StateType>, std::decay_t<T>>
+            requires std::is_same_v<Memento<StateType>, std::decay_t<T>>
             void SetMemento(T &&memento) {
                 memento_ = std::make_unique<Memento<StateType>>(memento);
             }
@@ -669,8 +619,7 @@ namespace pattern {
         protected:
             std::shared_ptr<T> decorated_data_;
 
-            Decorator(std::shared_ptr<T> decorated_data)
-                : decorated_data_(decorated_data) {}
+            Decorator(std::shared_ptr<T> decorated_data) : decorated_data_(decorated_data) {}
         };
     }  // namespace decorator
 }  // namespace pattern

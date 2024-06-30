@@ -25,20 +25,15 @@ namespace {
 
             class Apple : public Fruit {
             public:
-                virtual void eat() const override {
-                    std::cout << "eat apple" << std::endl;
-                }
+                virtual void eat() const override { std::cout << "eat apple" << std::endl; }
             };
 
             class Banana : public Fruit {
             public:
-                virtual void eat() const override {
-                    std::cout << "eat banana" << std::endl;
-                }
+                virtual void eat() const override { std::cout << "eat banana" << std::endl; }
             };
 
-            class SimpleFruitFactory
-                : public pattern::simplefactory::SimpleFactory<Fruit> {
+            class SimpleFruitFactory : public pattern::simplefactory::SimpleFactory<Fruit> {
             public:
                 SimpleFruitFactory() = default;
             };
@@ -62,16 +57,12 @@ namespace {
 
             class Apple : public Fruit {
             public:
-                virtual void eat() const override {
-                    std::cout << "eat apple" << std::endl;
-                }
+                virtual void eat() const override { std::cout << "eat apple" << std::endl; }
             };
 
             class Banana : public Fruit {
             public:
-                virtual void eat() const override {
-                    std::cout << "eat banana" << std::endl;
-                }
+                virtual void eat() const override { std::cout << "eat banana" << std::endl; }
             };
 
             class AppleFactory : public factory::Factory<Apple> {
@@ -114,12 +105,8 @@ namespace {
                 }
 
             private:
-                void SetMealName(std::shared_ptr<Meal> &product) {
-                    product->name = std::string_view{"children meal"};
-                }
-                void SetMealWeight(std::shared_ptr<Meal> &product) {
-                    product->weight = std::string_view("200g");
-                }
+                void SetMealName(std::shared_ptr<Meal> &product) { product->name = std::string_view{"children meal"}; }
+                void SetMealWeight(std::shared_ptr<Meal> &product) { product->weight = std::string_view("200g"); }
             };
 
             using Builder = ChildrenMealBuilder;
@@ -165,9 +152,7 @@ namespace {
                 // 如果将下面的拷贝构造取消注释，直接无法编译，感觉不如直接重写拷贝构造
                 // Apple(Apple const& other) = delete;
 
-                virtual std::shared_ptr<Prototype> Clone() const override {
-                    return std::make_shared<Apple>(*this);
-                }
+                virtual std::shared_ptr<Prototype> Clone() const override { return std::make_shared<Apple>(*this); }
             };
 
             auto apple{Apple{}};
@@ -261,8 +246,7 @@ namespace {
         SmallPen() = default;
 
         virtual void Draw(std::string_view object) override {
-            std::cout << "using small pen draw " << color_->Get().info << ' '
-                      << object << std::endl;
+            std::cout << "using small pen draw " << color_->Get().info << ' ' << object << std::endl;
         }
     };
 
@@ -271,8 +255,7 @@ namespace {
         MiddlePen() = default;
 
         virtual void Draw(std::string_view object) override {
-            std::cout << "using middle pen draw " << color_->Get().info << ' '
-                      << object << std::endl;
+            std::cout << "using middle pen draw " << color_->Get().info << ' ' << object << std::endl;
         }
     };
 
@@ -316,9 +299,7 @@ namespace {
     };
 
     template <typename T>
-    class ListNodeIterator
-        : public iterator::Iterator<
-              ListNodeIterator<T>, T, std::forward_iterator_tag> {
+    class ListNodeIterator : public iterator::Iterator<ListNodeIterator<T>, T, std::forward_iterator_tag> {
         ListNode<T> *current = nullptr;
 
     public:
@@ -340,9 +321,7 @@ namespace {
 
     class ProxyImage : public ImageDisplayable {
     public:
-        ProxyImage()
-            : proxy_([=]() { return std::make_unique<RealImageProxyImpl>(); }) {
-        }
+        ProxyImage() : proxy_([=]() { return std::make_unique<RealImageProxyImpl>(); }) {}
 
         void display() override {
             auto image = proxy_.GetObject();
@@ -440,15 +419,11 @@ namespace {
 
     class ConCommandA : public command::Command<AbsCommand> {
     public:
-        virtual void Execute() override {
-            std::cout << "executed concrete command A" << std::endl;
-        }
+        virtual void Execute() override { std::cout << "executed concrete command A" << std::endl; }
     };
 
     class ConCommandB : public command::Command<AbsCommand> {
-        virtual void Execute() override {
-            std::cout << "executed concrete command B" << std::endl;
-        }
+        virtual void Execute() override { std::cout << "executed concrete command B" << std::endl; }
     };
 
     class CommandList : public command::CommandList<AbsCommand> {
@@ -615,24 +590,19 @@ namespace {
 
     class BlackPiece : public flyweight::Flyweight<Piece, std::string_view> {
     public:
-        BlackPiece(std::string_view position)
-            : flyweight::Flyweight<Piece, std::string_view>(position) {
-            std::cout << "black piece was put on position: " << position
-                      << std::endl;
+        BlackPiece(std::string_view position) : flyweight::Flyweight<Piece, std::string_view>(position) {
+            std::cout << "black piece was put on position: " << position << std::endl;
         }
     };
 
     class WhitePiece : public flyweight::Flyweight<Piece, std::string_view> {
     public:
-        WhitePiece(std::string_view position)
-            : flyweight::Flyweight<Piece, std::string_view>(position) {
-            std::cout << "white piece was put on position: " << position
-                      << std::endl;
+        WhitePiece(std::string_view position) : flyweight::Flyweight<Piece, std::string_view>(position) {
+            std::cout << "white piece was put on position: " << position << std::endl;
         }
     };
 
-    class Factory
-        : public flyweight::FlyweightFactory<Piece, std::string_view> {
+    class Factory : public flyweight::FlyweightFactory<Piece, std::string_view> {
     public:
         Factory() = default;
     };
@@ -640,10 +610,8 @@ namespace {
     TEST_CASE("flywegiht") {
         SECTION("normal usage") {
             auto factory = Factory{};
-            auto black_piece1 =
-                factory.Get<BlackPiece>(std::string_view("12, 2"));
-            auto white_piece1 =
-                factory.Get<WhitePiece>(std::string_view("18, 18"));
+            auto black_piece1 = factory.Get<BlackPiece>(std::string_view("12, 2"));
+            auto white_piece1 = factory.Get<WhitePiece>(std::string_view("18, 18"));
         }
     }
 }  // namespace
@@ -730,8 +698,7 @@ namespace {
         using decorated_type = Coffee;
         using shared_pointer = std::shared_ptr<decorated_type>;
 
-        CoffeeDecorator(shared_pointer pointer)
-            : decorator::Decorator<Coffee>(pointer) {}
+        CoffeeDecorator(shared_pointer pointer) : decorator::Decorator<Coffee>(pointer) {}
     };
 
     class Mocha : public CoffeeDecorator {
