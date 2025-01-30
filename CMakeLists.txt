@@ -46,7 +46,7 @@ install(
 
 option(BUILD_TEST OFF)
 
-# if(BUILD_TEST)
+if(BUILD_TEST)
 file (GLOB SRC_FILES
 "${PROJECT_SOURCE_DIR}/test/*.cpp"
 )
@@ -60,12 +60,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 Patterns
 Catch2::Catch2 Catch2::Catch2WithMain
 )
-# endif()
+endif()
 
 option(BUILD_DOCS ON)
 
-# if (BUILD_DOCS)
-if (True)
+if (BUILD_DOCS)
     find_package(Doxygen REQUIRED dot)
     if (DOXYGEN_FOUND)
         include(FetchContent)
